@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Arya banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;500;700&display=swap">
+<style>
+  /* Render target: 1200x300 CSS px, captured at 2x (html zoom) = 2400x600. */
+  html { zoom: 2; }
+  body { margin: 0; }
+  .banner {
+    --bg: #faf9f6; --ink: #14120f; --pill: #efede5; --ring: 217, 83, 43;
+    --deep: #a8391a; --mid: #d9532b; --gold: #e9b44c; --soft: #f0a070; --pale: #f8e3d0;
+    position: relative; width: 1200px; height: 300px; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+  }
+  .banner.dark { --bg: #14120f; --ink: #faf9f6; --pill: rgba(255, 255, 255, 0.09); --ring: 240, 160, 112; }
+
+  .copy { position: absolute; left: 64px; top: 0; height: 300px; display: flex; flex-direction: column; justify-content: center; }
+  .name { font-weight: 700; font-size: 78px; letter-spacing: -0.045em; line-height: 1; }
+  .tag { font-weight: 300; font-size: 33px; letter-spacing: -0.035em; line-height: 1.1; margin-top: 14px; }
+  .pills { display: flex; gap: 10px; margin-top: 26px; }
+  .pills span { background: var(--pill); border-radius: 999px; padding: 8px 16px; font-weight: 500; font-size: 15px; letter-spacing: -0.01em; white-space: nowrap; }
+
+  /* Voice stage: orb centred at (930, 150). */
+  .stage { position: absolute; left: 930px; top: 150px; width: 0; height: 0; }
+  .halo { position: absolute; left: -330px; top: -210px; width: 660px; height: 420px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(233, 180, 76, 0.34), rgba(217, 83, 43, 0.13) 55%, transparent 100%); filter: blur(18px); }
+  .dark .halo { background: radial-gradient(closest-side, rgba(233, 180, 76, 0.30), rgba(217, 83, 43, 0.18) 55%, transparent 100%); }
+  .ring { position: absolute; border-radius: 50%; border: 1.5px solid; transform: translate(-50%, -50%); }
+  .ring.r1 { width: 240px; height: 240px; border-color: rgba(var(--ring), 0.30); }
+  .ring.r2 { width: 284px; height: 284px; border-color: rgba(var(--ring), 0.14); }
+  .bar { position: absolute; width: 4px; border-radius: 2px; background: linear-gradient(var(--gold), var(--mid)); transform: translate(-50%, -50%); top: 0; }
+
+  /* The orb is the app's own aurora orb (frontend/src/styles.css, .bigorb), frozen on one frame. */
+  .orb { --s: 196px; position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2); width: var(--s); height: var(--s); }
+  .sphere { position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+    background: radial-gradient(circle at 33% 28%, #ffffff 0%, var(--pale) 30%, var(--gold) 62%, var(--mid) 100%);
+    box-shadow:
+      inset 0 calc(var(--s) * -0.14) calc(var(--s) * 0.27) rgba(168, 57, 26, 0.35),
+      inset 0 calc(var(--s) * 0.09) calc(var(--s) * 0.16) rgba(255, 255, 255, 0.9),
+      0 calc(var(--s) * 0.12) calc(var(--s) * 0.30) calc(var(--s) * -0.08) rgba(217, 83, 43, 0.45); }
+  .fluid { position: absolute; inset: -20%; border-radius: 50%; filter: blur(calc(var(--s) * 0.045)); }
+  .f1 { transform: rotate(38deg);
+    background: conic-gradient(from 15deg, var(--deep) 0deg, var(--deep) 28deg, var(--pale) 55deg, var(--mid) 85deg, #ffffff 115deg,
+      var(--gold) 145deg, var(--deep) 185deg, var(--soft) 225deg, var(--pale) 250deg, var(--gold) 285deg, var(--deep) 330deg, var(--deep) 360deg); }
+  .f2 { opacity: 0.85; mix-blend-mode: screen; transform: rotate(-112deg);
+    background: conic-gradient(from 230deg, transparent 0deg, #ffffff 35deg, transparent 80deg, var(--pale) 135deg, transparent 185deg, #ffffff 265deg, transparent 315deg); }
+  .f3 { opacity: 0.6; transform: rotate(204deg);
+    background: conic-gradient(from 100deg, transparent 0deg, var(--deep) 50deg, transparent 120deg, var(--gold) 200deg, var(--mid) 250deg, transparent 320deg); }
+  .sheen { position: absolute; inset: 0; border-radius: 50%; background:
+      radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 46%),
+      radial-gradient(circle at 68% 88%, rgba(120, 36, 12, 0.30), rgba(120, 36, 12, 0) 52%); }
+</style>
+</head>
+<body>
+<div class="banner" id="banner">
+  <div class="copy">
+    <div class="name">Arya</div>
+    <div class="tag">Open-source voice orchestration.</div>
+    <div class="pills"><span>Apache 2.0</span><span>Website · WhatsApp · Voice calls</span></div>
+  </div>
+  <div class="stage" id="stage">
+    <div class="halo"></div>
+    <div class="ring r2"></div>
+    <div class="ring r1"></div>
+    <div class="orb"><div class="sphere"><span class="fluid f1"></span><span class="fluid f2"></span><span class="fluid f3"></span><span class="sheen"></span></div></div>
+  </div>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get("theme") === "dark") document.getElementById("banner").classList.add("dark");
+  // Waveform: bars either side of the orb, tallest near it, fading to nothing at both ends.
+  const stage = document.getElementById("stage");
+  const REACH = 262, GAP = 152, STEP = 9;
+  const bars = [];
+  for (let dx = -REACH, i = 0; dx <= REACH; dx += STEP, i++) {
+    const d = Math.abs(dx);
+    if (d < GAP) continue;
+    const t = (d - GAP) / (REACH - GAP);                       // 0 next to the orb, 1 at the far end
+    const wobble = 0.55 + 0.45 * Math.abs(Math.sin(dx * 0.19) * Math.cos(dx * 0.071 + 1.3));
+    const el = document.createElement("div");
+    el.className = "bar";
+    el.style.left = dx + "px";
+    el.style.opacity = (0.9 * (1 - t) ** 1.1).toFixed(3);
+    stage.insertBefore(el, stage.querySelector(".orb"));
+    bars.push({ el, base: 10 + 96 * wobble * (1 - t) ** 1.25, k: 2 + (i % 3), phase: dx * 0.37 });
+  }
+
+  // One seamless loop: p runs 0..1 and every motion completes a whole number of cycles,
+  // so frame N flows back into frame 0. setT(0.25) is the still frame used for the PNGs.
+  const TAU = Math.PI * 2;
+  const q = (s) => document.querySelector(s);
+  window.setT = (p) => {
+    q(".f1").style.transform = `rotate(${38 + 360 * p}deg)`;
+    q(".f2").style.transform = `rotate(${-112 - 360 * p}deg)`;
+    q(".f3").style.transform = `rotate(${204 + 720 * p}deg)`;
+    q(".sphere").style.transform = `scale(${1 + 0.025 * Math.sin(TAU * 2 * p)})`;
+    q(".r1").style.transform = `translate(-50%, -50%) scale(${1 + 0.028 * Math.sin(TAU * 2 * p - 0.7)})`;
+    q(".r2").style.transform = `translate(-50%, -50%) scale(${1 + 0.028 * Math.sin(TAU * 2 * p - 1.5)})`;
+    for (const b of bars) b.el.style.height = (b.base * (0.62 + 0.38 * Math.sin(TAU * b.k * p + b.phase))).toFixed(1) + "px";
+  };
+  window.setT(0.25);
+  document.fonts.ready.then(() => { document.title = "READY"; });
+</script>
+</body>
+</html>

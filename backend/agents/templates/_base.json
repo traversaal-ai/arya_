@@ -1,0 +1,34 @@
+{
+  "id": "custom",
+  "name": "",
+  "description": "A custom voice agent built from your answers.",
+  "icon": "🤖",
+  "provider": "openai",
+  "stt": { "language": "en", "vocabulary": [] },
+  "llm": {},
+  "tts": {},
+  "local": {
+    "backend": "ollama",
+    "ollama": { "llm_url": "", "llm_model": "" },
+    "vllm": { "stt_url": "", "stt_model": "", "llm_url": "", "llm_model": "", "tts_url": "", "tts_model": "" }
+  },
+  "turn_detection": { "version": "v1-mini", "unlikely_threshold": null },
+  "session": { "inactivity_timeout_s": 180 },
+  "search": { "provider": "serpapi" },
+  "tools": { "weather": false, "web_search": false, "booking": false },
+  "memory": { "enabled": false, "scope": "agent", "max_writes_per_call": 20 },
+  "rag": {
+    "enabled": false,
+    "embedding_profile": "nomic",
+    "ocr": "auto",
+    "allowed_formats": [".pdf", ".docx", ".md", ".txt"],
+    "top_k": 5,
+    "query_context_turns": 1,
+    "min_score": 0.55,
+    "timeout_s": 2.0
+  },
+  "greeting": "",
+  "openers": [],
+  "business": {},
+  "instructions": ""
+}

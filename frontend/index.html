@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Pre-paint theme: returning dark users get the attribute before any
+         CSS renders, so there is no light flash. Default is always light —
+         deliberately NOT prefers-color-scheme. -->
+    <script>
+      try {
+        if (localStorage.getItem("arya_theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch (e) {}
+    </script>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover lets the layout reach under the notch and home
+         indicator; styles.css then insets with env(safe-area-inset-*).
+         Deliberately no maximum-scale / user-scalable=no: blocking pinch-zoom
+         would fail WCAG 1.4.4. The iOS focus-zoom is fixed by shipping 16px
+         form fields on coarse pointers instead. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Arya</title>
+    <meta
+      name="description"
+      content="Build a voice agent for your business and talk to it in your browser. Self-hosted, with your choice of OpenAI, Groq, or fully open-source models."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Browser chrome colour: --paper from styles.css, light and dark. -->
+    <meta name="theme-color" content="#fcfcfc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1412" media="(prefers-color-scheme: dark)" />
+    <!-- fonts are self-hosted via @fontsource-variable (imported in
+         main.jsx): no runtime CDN, works fully offline -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

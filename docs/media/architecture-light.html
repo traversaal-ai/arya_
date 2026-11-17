@@ -1,0 +1,417 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arya architecture</title>
+<script>document.documentElement.setAttribute("data-theme","light")</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the voice path as a U (voice in, LiveKit, Listen > Think > Speak, LiveKit, voice out) with models below and call setup, data and monitoring in a column on the right; a flow panel walks one turn through it. */
+:root{
+  --bg:#f5f6f8; --canvas:#ffffff; --ink:#1b2230; --muted:#6a7383; --faint:#a7afbb; --line:#d6dbe3;
+  --client:#2d7dd2; --work:#3f51b5; --conn:#7b4fc2; --agent:#c2560c; --agent-fill:#fdf1e8; --agent-band:#fbe6d6;
+  --data:#1b7f5c; --limit:#b7791f; --wire:#5b6577; --disp:#1a73e8;
+  --display:"Inter Tight", "Segoe UI", system-ui, sans-serif; --body:"Inter", "Segoe UI", system-ui, sans-serif; --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+:root[data-theme="dark"]{
+  --bg:#0f131a; --canvas:#161c25; --ink:#e5eaf1; --muted:#9aa4b2; --faint:#55606e; --line:#2b3442;
+  --client:#7fb0ff; --work:#8a9bf0; --conn:#b99af0; --agent:#f0915a; --agent-fill:#2a1d14; --agent-band:#33231a;
+  --data:#5fc79f; --limit:#e0a84a; --wire:#9aa4b2; --disp:#7fb0ff; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;margin:0}
+.wrap{max-width:1500px;margin:0 auto;padding:22px 16px 36px;display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:end;justify-content:space-between}
+h1{font-family:var(--display);font-size:clamp(22px,2.8vw,30px);font-weight:700;margin:0;line-height:1.15}
+.lede{margin:4px 0 0;color:var(--muted);max-width:86ch}
+button{font:600 13.5px var(--body);border:1px solid var(--line);background:var(--canvas);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--agent);border-color:var(--agent);color:var(--canvas);min-width:86px}
+button:focus-visible{outline:2px solid var(--agent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.board{background:var(--canvas);border:1px solid var(--line);border-radius:12px;overflow-x:auto;padding:8px 0}
+.bar{position:sticky;top:0;z-index:2;background:var(--canvas);border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start;padding:12px 16px;margin:-8px 0 8px;border-radius:12px 12px 0 0}
+.ctl{display:flex;gap:6px;flex-wrap:wrap}
+.stages{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px;order:-1}
+.stagechip{font-size:12.5px;padding:5px 10px;border-radius:999px}
+.stagechip.on{background:var(--agent);border-color:var(--agent);color:var(--canvas)}
+.stagechip.done{border-color:var(--agent);color:var(--agent)}
+.capk{font:600 12px var(--mono);letter-spacing:.1em;color:var(--agent)}
+.capt{font-family:var(--display);font-size:18px;font-weight:700;line-height:1.25}
+.capd{font-size:13.5px;color:var(--muted);margin-top:2px}
+.capnow{margin-top:6px;font-size:14px;min-height:42px}
+.capnow b{font-weight:600}
+.kind{display:inline-block;font:700 12px var(--body);letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-right:4px;vertical-align:1px;background:var(--agent-fill);color:var(--agent)}
+.kind.k-owner{background:var(--muted);color:var(--canvas)}
+.kind.k-caller{background:var(--client);color:var(--canvas)}
+.kind.k-api,.kind.k-bridge{background:var(--work);color:var(--canvas)}
+svg{display:block;width:100%;min-width:900px;height:auto}
+svg text{fill:var(--ink);font-family:var(--body)}
+.rowlab{font-family:var(--mono);font-size:12px;letter-spacing:.12em;fill:var(--muted)}
+.rowsub{font-size:12px;fill:var(--muted)}
+.b rect{fill:var(--canvas);stroke-width:1.6;transition:opacity .25s, stroke-width .25s}
+.b{transition:opacity .25s}
+.b .t{font-weight:600;font-size:13px;text-anchor:middle}
+.b .s{font-size:12px;fill:var(--muted);text-anchor:middle}
+.b.client rect{stroke:var(--client)} .b.ext rect{stroke-dasharray:5 4}
+.b.svc rect{stroke:var(--work)} .b.rt rect{stroke:var(--agent)}
+.b.agent rect{stroke:var(--agent);fill:var(--agent-fill)}
+.b.model rect{stroke:var(--conn)} .b.data rect{stroke:var(--data)} .b.mon rect{stroke:var(--limit)}
+.b.lit rect{stroke-width:3}
+.b.now rect{stroke-width:3.5;fill:var(--agent-fill)}
+.dimmed .b:not(.lit){opacity:.28}
+.dimmed .wl:not(.lit){opacity:.18}
+.dimmed .bandg:not(.lit){opacity:.4}
+.wl,.bandg{transition:opacity .25s}
+.w{fill:none;stroke:var(--wire);stroke-width:1.5}
+.w.rtc{stroke:var(--agent);stroke-width:1.8;stroke-dasharray:6 4}
+.w.disp{stroke:var(--disp);stroke-dasharray:4 3}
+.w.mdl{stroke:var(--conn)}
+.w.in{stroke:var(--agent)}
+.w.bus{opacity:.5}
+.el{font-size:12px;fill:var(--ink)}
+.num circle{fill:var(--agent)} .num text{fill:var(--canvas);font-size:12px;font-weight:700;text-anchor:middle}
+.band{fill:var(--agent-band);stroke:var(--agent);stroke-width:1.2}
+.bandtxt{font-size:12.5px;font-weight:600;text-anchor:middle}
+.plug{fill:none;stroke:var(--agent);stroke-dasharray:4 3;opacity:.6}
+.grp{fill:none;stroke:var(--client);stroke-dasharray:4 3;opacity:.7}
+#dot{fill:var(--agent);filter:drop-shadow(0 0 3px var(--agent))}
+#dot.off{display:none}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;padding:4px 20px 6px;font-size:12.5px;color:var(--ink)}
+.legend i{display:inline-block;width:14px;height:10px;border:1.6px solid;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend u{display:inline-block;width:22px;height:0;border-top:2px solid;margin-right:6px;vertical-align:4px;text-decoration:none}
+.flow{background:var(--canvas);border:1px solid var(--line);border-radius:12px;padding:18px 18px 8px;max-height:calc(100vh - 40px);overflow:auto;position:sticky;top:0}
+.flow .k{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--agent)}
+.flow h2{font-family:var(--display);font-size:22px;margin:4px 0 6px}
+.flow p.intro{margin:0 0 12px;color:var(--ink)}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{padding:5px 10px;font-size:12.5px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+ol.f{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+ol.f li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer}
+ol.f li .n{width:22px;height:22px;border-radius:50%;background:var(--agent);color:var(--canvas);font:700 12px var(--body);display:grid;place-items:center}
+ol.f li p{margin:0;font-size:13.5px}
+ol.f li p b{font-weight:600}
+ol.f li.grp{margin-top:6px}
+ol.f li.ev{padding:4px 6px}
+ol.f li.ev span{justify-self:center;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--agent)}
+ol.f li.ev.k-owner span{background:var(--muted)}
+ol.f li.ev.k-caller span{background:var(--client)}
+ol.f li.ev.k-api span,ol.f li.ev.k-bridge span{background:var(--work)}
+ol.f li.ev p{font-size:12.8px;color:var(--muted)}
+ol.f li.ev.on p{color:var(--ink)}
+ol.f li.on{background:var(--agent-fill)}
+@media (max-width:1100px){.grid{grid-template-columns:minmax(0,1fr)}.flow{position:static;max-height:none}}
+@media (max-width:640px){.bar{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Arya architecture</h1>
+      <p class="lede">Follow a caller's voice through Arya. The audio goes into LiveKit, one agent worker job listens, thinks and speaks, and the spoken reply goes back out the same way. Documents and tools are on hand along the way, and every call is saved and scored.</p>
+    </div>
+    <div class="controls">
+      <button id="theme" type="button" aria-pressed="false" title="Switch between light and dark">Dark mode</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="board" id="board">
+      <div class="bar" aria-live="polite">
+        <div class="ctl">
+          <button id="restart" type="button" title="Restart from step 1">↺ Restart</button>
+          <button id="back" type="button" aria-label="Previous step">◀</button>
+          <button id="play" class="primary" type="button">▶ Play</button>
+          <button id="next" type="button" aria-label="Next step">▶</button>
+        </div>
+        <div class="stages" id="stages" role="group" aria-label="Stages"></div>
+        <div class="cap">
+          <div class="capk" id="capk"></div>
+          <div class="capt" id="capt"></div>
+          <div class="capd" id="capd"></div>
+          <div class="capnow" id="capnow"></div>
+        </div>
+      </div>
+      <svg id="svg" viewBox="0 0 1100 713" aria-label="Arya architecture, from voice in to voice out">
+        <defs>
+          <marker id="m" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--wire)"/></marker>
+          <marker id="mo" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--agent)"/></marker>
+          <marker id="mb" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--disp)"/></marker>
+          <marker id="mp" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--conn)"/></marker>
+        </defs>
+
+        <!-- row labels -->
+        <text class="rowlab" x="18" y="64">CALLER</text>
+        <text class="rowlab" x="18" y="203">REALTIME</text>
+        <text class="rowlab" x="18" y="424">AGENT WORKER</text>
+        <text class="rowsub" x="18" y="441">one job per call</text>
+        <text class="rowlab" x="18" y="664">MODELS AND TOOLS</text>
+        <text class="rowlab" x="900" y="24">CALL SETUP</text>
+        <text class="rowlab" x="900" y="262">DATA</text>
+        <text class="rowlab" x="900" y="560">MONITORING</text>
+
+        <!-- the caller: voice in on the left, voice out on the right -->
+        <rect class="grp" x="200" y="20" width="660" height="80" rx="6"/>
+
+        <g id="wires">
+          <g class="wl" data-k="vin"><path class="w rtc" d="M304 85 V 171" marker-end="url(#mo)"/><text class="el" x="312" y="140">audio in</text></g>
+          <g class="wl" data-k="vout"><path class="w rtc" d="M756 171 V 85" marker-end="url(#mo)"/><text class="el" x="764" y="140">audio out</text></g>
+          <g class="wl" data-k="disp"><path class="w disp" d="M974 85 V 199 H 860" marker-end="url(#mb)"/><text class="el" x="966" y="150" text-anchor="end">room + token</text></g>
+          <g class="wl" data-k="lkin"><path class="w rtc" d="M304 227 V 302" marker-end="url(#mo)"/><text class="el" x="312" y="269">caller audio</text></g>
+          <g class="wl" data-k="lkout"><path class="w rtc" d="M756 302 V 227" marker-end="url(#mo)"/><text class="el" x="764" y="269">reply audio</text></g>
+          <g class="wl" data-k="rail">
+            <path class="w" d="M860 520 H 880 V 298 H 900" marker-end="url(#m)"/>
+            <path class="w" d="M880 426 H 900" marker-end="url(#m)"/>
+            <path class="w" d="M880 490 H 900" marker-end="url(#m)"/>
+          </g>
+          <g class="wl" data-k="evals"><path class="w" d="M880 520 V 665 H 900" marker-end="url(#m)"/></g>
+          <g class="wl" data-k="arail">
+            <path class="w" d="M1048 60 H 1072 V 490 H 1048" marker-end="url(#m)"/>
+            <path class="w" d="M1072 298 H 1048" marker-end="url(#m)"/>
+            <path class="w" d="M1072 362 H 1048" marker-end="url(#m)"/>
+            <path class="w" d="M1072 426 H 1048" marker-end="url(#m)"/>
+          </g>
+          <g class="wl" data-k="pgobs"><path class="w" d="M1020 514 V 572" marker-end="url(#m)"/></g>
+          <g class="wl" data-k="cloud"><path class="w mdl" d="M305 556 V 631" marker-end="url(#mp)"/><text class="el" x="313" y="598">STT · LLM · TTS</text></g>
+          <g class="wl" data-k="local"><path class="w mdl" d="M530 556 V 631" marker-end="url(#mp)"/><text class="el" x="538" y="598">same, on your machine</text></g>
+          <g class="wl" data-k="tools"><path class="w mdl" d="M755 556 V 631" marker-start="url(#mp)" marker-end="url(#mp)"/><text class="el" x="763" y="598">tool calls</text></g>
+        </g>
+
+        <!-- agent worker band -->
+        <g class="bandg" id="band">
+          <rect class="band" x="200" y="302" width="660" height="254" rx="8" style="fill:none"/>
+          <rect class="band" x="200" y="302" width="660" height="26" rx="8"/>
+          <text class="bandtxt" x="530" y="320">Agent worker · LiveKit Agents (Python) · one job per call</text>
+          <path class="w in" d="M394 384 H 440" marker-end="url(#mo)"/>
+          <path class="w in" d="M620 384 H 666" marker-end="url(#mo)"/>
+          <path class="w in" d="M475 418 V 454" marker-start="url(#mo)" marker-end="url(#mo)"/>
+          <path class="w in" d="M585 418 V 454" marker-start="url(#mo)" marker-end="url(#mo)"/>
+          <path class="w in bus" d="M250 418 V 520 H 860 M530 418 V 520 M800 418 V 520 M405 506 V 520 M655 506 V 520"/>
+          <rect class="band" x="200" y="530" width="660" height="26" rx="8"/>
+          <text class="bandtxt" x="530" y="548">Every turn is timed · tool calls and document lookups are logged</text>
+        </g>
+
+        <g id="boxes"></g>
+
+        <circle id="dot" class="off" r="6" cx="-20" cy="-20"/>
+      </svg>
+      <div class="legend">
+        <span><i style="border-color:var(--client)"></i>Caller</span>
+        <span><i style="border-color:var(--work)"></i>Arya service</span>
+        <span><i style="border-color:var(--agent);background:var(--agent-fill)"></i>Realtime</span>
+        <span><i style="border-color:var(--conn)"></i>Models and tools</span>
+        <span><i style="border-color:var(--data)"></i>Data</span>
+        <span><i style="border-color:var(--limit)"></i>Monitoring</span>
+        <span><u style="border-color:var(--agent);border-top-style:dashed"></u>Live audio</span>
+        <span><u style="border-color:var(--disp);border-top-style:dashed"></u>Room and token for a call</span>
+        <span>Double arrow: both directions</span>
+      </div>
+    </div>
+
+    <aside class="flow">
+      <div class="k">FLOW</div>
+      <h2 id="fh"></h2>
+      <div class="tabs" role="group" aria-label="Flow">
+        <button type="button" data-mode="journey" aria-pressed="true">From voice in to voice out</button>
+        <button type="button" data-mode="services" aria-pressed="false">Each service</button>
+      </div>
+      <p class="intro" id="fi"></p>
+      <ol class="f" id="fl"></ol>
+    </aside>
+  </div>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+// [id, class, x, y, w, h, title, subtitle, number]
+const BOX=[
+  ["vin","client",212,35,290,50,"Voice in","caller speaks · web call or WhatsApp"],
+  ["vout","client",558,35,290,50,"Voice out","caller hears the spoken reply"],
+  ["lk","rt",200,171,660,56,"LiveKit server","WebRTC rooms · live audio in both directions"],
+  ["a1","agent",214,350,180,68,"Listen","VAD · speech-to-text","1"],
+  ["a2","agent",440,350,180,68,"Think","LLM · instructions","2"],
+  ["a3","agent",666,350,180,68,"Speak","text-to-speech","3"],
+  ["a4","agent",300,454,210,52,"Documents","RAG search"],
+  ["a5","agent",550,454,210,52,"Tools","functions · MCP"],
+  ["cloud","model",200,631,210,58,"Cloud models","OpenAI · Gemini · Groq"],
+  ["local","model",425,631,210,58,"Local models","Ollama · vLLM · Speaches"],
+  ["tools","model",650,631,210,58,"Tools and connectors","MCP · web search · memory"],
+  ["api","svc",900,35,148,50,"Arya API","starts the call"],
+  ["cfg","data",900,274,148,48,"Config and keys","agents · keys.json"],
+  ["s3","data",900,338,148,48,"SeaweedFS","uploaded documents"],
+  ["qd","data",900,402,148,48,"Qdrant","document chunks"],
+  ["pg","data",900,466,148,48,"Postgres","transcripts · metrics"],
+  ["obs","mon",900,572,148,48,"Observability","latency · tool events"],
+  ["evals","mon",900,641,148,48,"Evals","LLM judges, opt-in"]
+];
+const NAME={wk:"Agent worker"}; const boxes=document.getElementById("boxes");
+BOX.forEach(([id,cls,x,y,w,h,t,s,num])=>{
+  NAME[id]=t;
+  const g=document.createElementNS(NS,"g"); g.setAttribute("class","b "+cls); g.dataset.id=id;
+  let html=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="t" x="${x+w/2}" y="${y+h/2-2}">${t}</text><text class="s" x="${x+w/2}" y="${y+h/2+14}">${s}</text>`;
+  if(num) html+=`<g class="num"><circle cx="${x+2}" cy="${y+2}" r="10"/><text x="${x+2}" y="${y+6.2}">${num}</text></g>`;
+  g.innerHTML=html; boxes.appendChild(g);
+});
+
+// Routes the dot can travel: points, and the wires to light. A missing "a>b" falls back to "b>a" reversed.
+const rail=y=>[[860,520],[880,520],[880,y],[900,y]], arail=y=>[[1048,60],[1072,60],[1072,y],[1048,y]];
+const toCloud=x=>({p:[[x,418],[x,520],[305,520],[305,631]],w:["cloud"]});
+const RT={
+  "vin>lk":{p:[[304,85],[304,171]],w:["vin"]}, "lk>vout":{p:[[756,171],[756,85]],w:["vout"]},
+  "api>lk":{p:[[974,85],[974,199],[860,199]],w:["disp"]},
+  "api>cfg":{p:arail(298),w:["arail"]}, "api>s3":{p:arail(362),w:["arail"]}, "api>qd":{p:arail(426),w:["arail"]}, "api>pg":{p:arail(490),w:["arail"]},
+  "lk>wk":{p:[[304,227],[304,302]],w:["lkin"]},
+  "lk>a1":{p:[[304,227],[304,350]],w:["lkin"]},
+  "a3>lk":{p:[[756,350],[756,227]],w:["lkout"]},
+  "a1>a2":{p:[[394,384],[440,384]],w:[]}, "a2>a3":{p:[[620,384],[666,384]],w:[]},
+  "a1>cloud":toCloud(250), "a2>cloud":toCloud(530), "a3>cloud":toCloud(800),
+  "a4>qd":{p:[[405,506],[405,520],[880,520],[880,426],[900,426]],w:["rail"]},
+  "a5>tools":{p:[[655,506],[655,520],[755,520],[755,631]],w:["tools"]},
+  "wk>cfg":{p:rail(298),w:["rail"]}, "wk>qd":{p:rail(426),w:["rail"]}, "wk>pg":{p:rail(490),w:["rail"]},
+  "wk>cloud":{p:[[305,556],[305,631]],w:["cloud"]}, "wk>local":{p:[[530,556],[530,631]],w:["local"]}, "wk>tools":{p:[[755,556],[755,631]],w:["tools"]},
+  "wk>evals":{p:[[860,520],[880,520],[880,665],[900,665]],w:["evals"]},
+  "pg>obs":{p:[[1020,514],[1020,572]],w:["pgobs"]}
+};
+function route(a,b){
+  const r=RT[a+">"+b]; if(r) return r;
+  const q=RT[b+">"+a]; if(q) return {p:[...q.p].reverse(),w:q.w};
+  throw new Error("no route "+a+">"+b);
+}
+
+const KIND={caller:"Caller",api:"Arya API",worker:"Agent worker"};
+// journey events: [kind, from, to, text]
+const J=[
+ {stage:"Voice in",sub:"A caller asks: where is my order?",ev:[
+  ["api","api","lk","Before the first word, the Arya API opens a LiveKit room for the call and sends an agent worker to it."],
+  ["caller","vin","lk","The caller speaks. The audio goes straight to LiveKit."]]},
+ {stage:"Listen",sub:"The agent works out what was said.",ev:[
+  ["worker","lk","a1","The worker receives the audio. Voice activity and turn detection decide when the caller has finished."],
+  ["worker","a1","cloud","Speech-to-text turns the audio into words, on a cloud model or a local one."]]},
+ {stage:"Think",sub:"The agent works out what to say.",ev:[
+  ["worker","a1","a2","The words go to the LLM, together with the agent's instructions."],
+  ["worker","a4","qd","Documents: the question is matched against the uploaded documents in Qdrant."],
+  ["worker","a5","tools","Tools: the agent looks the order up through a connector."],
+  ["worker","a2","cloud","The LLM writes the answer from the question, the document excerpts and the tool result."]]},
+ {stage:"Speak",sub:"The answer becomes a voice.",ev:[
+  ["worker","a2","a3","The answer is passed on while it is still being written."],
+  ["worker","a3","cloud","Text-to-speech turns it into audio, sentence by sentence."]]},
+ {stage:"Voice out",sub:"The caller hears the reply.",ev:[
+  ["worker","a3","lk","The audio goes back into the LiveKit room."],
+  ["caller","lk","vout","The caller hears the reply, and can interrupt at any time."]]},
+ {stage:"Saved and scored",sub:"After the call, you can see how it went.",ev:[
+  ["worker","wk","pg","The worker saves the transcript and the timing of every turn."],
+  ["api","pg","obs","Observability reads those timings: latency per stage, tool calls and document lookups."],
+  ["worker","wk","evals","If evals are switched on, LLM judges score the call once it has ended."]]}
+];
+const SV=[
+  {id:"lk",kind:"worker",name:"LiveKit server",d:"The realtime media server. The caller and the agent worker meet in a room, and the audio flows through it.",visits:[
+    ["vin","receives the caller's audio over WebRTC"],["wk","shares the room with the agent worker"],["vout","carries the spoken reply back to the caller"]]},
+  {id:"wk",kind:"worker",name:"Agent worker",d:"The voice agent. One job per call: listen, think, speak, with documents and tools on hand.",visits:[
+    ["cfg","reads the agent's config and keys at the start of each call"],["cloud","speech-to-text, the LLM and text-to-speech from a cloud provider"],
+    ["local","or the same three stages on your own machine"],["qd","searches the uploaded documents"],["tools","calls tools and connectors mid-call"],
+    ["pg","writes the transcript and per-turn metrics"],["evals","runs the LLM judges after the call"]]},
+  {id:"api",kind:"api",name:"Arya API",d:"The control plane. It stores agents, ingests documents and starts every call. It never carries audio.",visits:[
+    ["lk","creates a room per call and issues its token"],["cfg","keeps agent configs and provider keys"],["s3","stores uploaded documents"],
+    ["qd","writes document chunks after ingestion"],["pg","conversations and published agents"]]}
+];
+
+const svg=document.getElementById("svg"), dot=document.getElementById("dot"), band=document.getElementById("band"), fl=document.getElementById("fl"), fi=document.getElementById("fi"), fh=document.getElementById("fh");
+const $=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let mode="journey", seq=[], groups=[], cur=-1, playing=false, raf=null, token=0;
+const SPEED=0.32, HOLD=2600;
+
+function build(){
+  seq=[]; groups=[];
+  if(mode==="journey") J.forEach((s,gi)=>{groups.push({name:s.stage,sub:s.sub,start:seq.length});
+    s.ev.forEach(([kind,from,to,text])=>seq.push({g:gi,kind,from,to,text,r:route(from,to)}));});
+  else SV.forEach((a,gi)=>{groups.push({name:a.name,sub:a.d,start:seq.length});
+    a.visits.forEach(([to,text])=>seq.push({g:gi,kind:a.kind,from:a.id,to,text,r:route(a.id,to)}));});
+}
+const inWorker=id=>id==="wk"||/^a\d$/.test(id);
+function light(e){
+  const ids=new Set([e.from,e.to]), wires=new Set(e.r.w);
+  svg.classList.add("dimmed");
+  band.classList.toggle("lit",inWorker(e.from)||inWorker(e.to));
+  document.querySelectorAll(".b").forEach(b=>{const on=ids.has(b.dataset.id)||(ids.has("wk")&&/^a\d$/.test(b.dataset.id));b.classList.toggle("lit",on);b.classList.toggle("now",ids.has(b.dataset.id));});
+  document.querySelectorAll(".wl").forEach(w=>w.classList.toggle("lit",wires.has(w.dataset.k)));
+}
+const segs=pts=>pts.slice(1).map((p,i)=>Math.hypot(p[0]-pts[i][0],p[1]-pts[i][1]));
+const plen=pts=>segs(pts).reduce((a,b)=>a+b,0);
+// Put the dot a fraction u (0..1) of the way along a path.
+function place(pts,u){
+  const sg=segs(pts); let d=Math.min(Math.max(u,0),1)*sg.reduce((a,b)=>a+b,0), i=0;
+  while(i<sg.length-1&&d>sg[i]){d-=sg[i];i++;}
+  const a=pts[i],b=pts[i+1],v=sg[i]?Math.min(d/sg[i],1):1;
+  dot.setAttribute("class",""); dot.setAttribute("cx",a[0]+(b[0]-a[0])*v); dot.setAttribute("cy",a[1]+(b[1]-a[1])*v);
+}
+function caption(i){
+  const e=seq[i], g=groups[e.g], inG=i-g.start+1, nG=(groups[e.g+1]?.start??seq.length)-g.start;
+  $("capk").textContent = mode==="journey" ? `Stage ${e.g+1} of ${groups.length} · step ${inG} of ${nG}` : `Service ${e.g+1} of ${groups.length} · ${inG} of ${nG}`;
+  $("capt").textContent=g.name; $("capd").textContent=g.sub;
+  $("capnow").innerHTML=`<span class="kind k-${e.kind}">${KIND[e.kind]}</span> <b>${NAME[e.from]} → ${NAME[e.to]}</b> · ${e.text}`;
+  document.querySelectorAll(".stagechip").forEach((c,k)=>{c.classList.toggle("on",k===e.g);c.classList.toggle("done",k<e.g);});
+  [...fl.querySelectorAll("li.ev")].forEach((li,k)=>li.classList.toggle("on",k===i));
+  [...fl.querySelectorAll("li.grp")].forEach((li,k)=>li.classList.toggle("on",k===e.g));
+  const li=fl.querySelector("li.ev.on"), box=document.querySelector(".flow");
+  if(li && box.scrollHeight>box.clientHeight+4) box.scrollTo({top:li.offsetTop-box.offsetTop-box.clientHeight/2,behavior:reduce?"auto":"smooth"});
+}
+// The whole diagram, nothing dimmed: the state before Play is pressed.
+function idle(){
+  token++; cancelAnimationFrame(raf); cur=-1; svg.classList.remove("dimmed"); dot.setAttribute("class","off");
+  document.querySelectorAll(".b,.wl,.bandg").forEach(x=>x.classList.remove("lit","now"));
+  document.querySelectorAll(".stagechip,ol.f li").forEach(x=>x.classList.remove("on","done"));
+  $("capk").textContent = mode==="journey" ? `${groups.length} stages · ${seq.length} steps` : `${groups.length} services`;
+  $("capt").textContent = mode==="journey" ? "From voice in to voice out" : "Each service";
+  $("capd").textContent = mode==="journey" ? "Press Play to follow a caller's voice from the first word to the spoken reply, then see how the call is saved and scored." : "Press Play to see each service in turn and everything it reaches.";
+  $("capnow").innerHTML="";
+}
+// Show step i with the dot a fraction u along its path (1 = arrived).
+function show(i,u=1){token++;cancelAnimationFrame(raf);cur=i;caption(i);light(seq[i]);place(seq[i].r.p,u);}
+function travel(pts,my){return new Promise(res=>{
+  if(reduce){place(pts,1);return res();}
+  const L=plen(pts), t0=performance.now();
+  (function f(now){ if(my!==token) return res();
+    const d=(now-t0)*SPEED; place(pts,L?d/L:1);
+    if(d<L) raf=requestAnimationFrame(f); else res();})(t0);
+});}
+async function step(i,my){
+  cur=i; caption(i); light(seq[i]);
+  await travel(seq[i].r.p,my);
+  if(my!==token) return;
+  setTimeout(()=>{ if(my!==token||!playing) return; if(cur<seq.length-1) step(cur+1,my); else {pause(); $("capnow").innerHTML+="<br><b>End.</b> Press Restart to watch again.";}}, HOLD);
+}
+function play(){playing=true;$("play").textContent="❚❚ Pause";token++;step(Math.max(cur,0),token);}
+function pause(){playing=false;$("play").textContent="▶ Play";token++;cancelAnimationFrame(raf);}
+$("play").addEventListener("click",()=>playing?pause():play());
+$("next").addEventListener("click",()=>{pause();show(Math.min(cur+1,seq.length-1));});
+$("back").addEventListener("click",()=>{pause();cur<=0?idle():show(cur-1);});
+$("restart").addEventListener("click",()=>{pause();cur=0;play();});
+function render(){
+  build();
+  $("stages").innerHTML = groups.map((g,k)=>`<button type="button" class="stagechip" data-g="${k}">${k+1}. ${g.name}</button>`).join("");
+  $("stages").querySelectorAll(".stagechip").forEach(b=>b.addEventListener("click",()=>{pause();show(groups[+b.dataset.g].start);}));
+  fh.textContent = mode==="journey" ? "From voice in to voice out" : "Each service";
+  fi.textContent = mode==="journey" ? "One caller's question, from voice in to voice out, then how the call is saved and scored. Click any step to jump to it." : "Each service in turn, and everything it reaches.";
+  let h=""; groups.forEach((g,k)=>{ h+=`<li class="grp" data-g="${k}"><span class="n">${k+1}</span><p><b>${g.name}</b></p></li>`;
+    seq.forEach((e,i)=>{ if(e.g===k) h+=`<li class="ev k-${e.kind}" data-i="${i}"><span></span><p>${e.text}</p></li>`; }); });
+  fl.innerHTML=h;
+  fl.querySelectorAll("li.ev").forEach(li=>li.addEventListener("click",()=>{pause();show(+li.dataset.i);}));
+  fl.querySelectorAll("li.grp").forEach(li=>li.addEventListener("click",()=>{pause();show(groups[+li.dataset.g].start);}));
+  idle();
+}
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+  mode=b.dataset.mode; document.querySelectorAll("[data-mode]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); pause(); render();}));
+render();
+// For re-making the still image and the animated version: step the diagram frame by frame.
+window.aryaDiagram={count:()=>seq.length,length:i=>plen(seq[i].r.p),show,idle};
+
+// This file always opens in the theme in its name. The switch flips it until the page is reloaded.
+const themeBtn=$("theme");
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  themeBtn.textContent=t==="dark"?"Light mode":"Dark mode";
+  themeBtn.setAttribute("aria-pressed",String(t==="dark"));
+}
+themeBtn.addEventListener("click",()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"));
+applyTheme(document.documentElement.getAttribute("data-theme")||"light");
+</script>

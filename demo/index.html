@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arya · Widget demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%235a63d6'%3E%3Crect x='1' y='9' width='2.6' height='6' rx='1.2'/%3E%3Crect x='4.7' y='1' width='2.6' height='14' rx='1.2'/%3E%3Crect x='8.4' y='5' width='2.6' height='10' rx='1.2'/%3E%3Crect x='12.1' y='3' width='2.6' height='12' rx='1.2'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #16161d;
+      --body: #3f4049;
+      --muted: #7a7b86;
+      --paper: #fbfbfd;
+      --wash: #f2f3fc;
+      --indigo: #5a63d6;
+      --indigo-deep: #3f47a8;
+      --line: #e3e4ef;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--body);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--indigo-deep); }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--indigo);
+      outline-offset: 2px;
+    }
+
+    .shell { max-width: 880px; margin: 0 auto; padding: 0 28px; }
+
+    /* Top bar */
+    header { border-bottom: 1px solid var(--line); }
+    .bar { display: flex; align-items: center; gap: 12px; height: 64px; }
+    .glyph { display: flex; align-items: flex-end; gap: 2.5px; height: 18px; }
+    .glyph i { width: 3px; background: var(--indigo); border-radius: 2px; display: block; }
+    .glyph i:nth-child(1) { height: 40%; }
+    .glyph i:nth-child(2) { height: 100%; }
+    .glyph i:nth-child(3) { height: 65%; }
+    .glyph i:nth-child(4) { height: 85%; }
+    .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1.05rem; color: var(--ink); letter-spacing: -0.01em; }
+    .bar-tag { margin-left: auto; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    /* Hero */
+    .hero { padding: 88px 0 0; }
+    .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--indigo-deep); }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: clamp(2.5rem, 7vw, 4.25rem);
+      line-height: 1.04;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      margin: 14px 0 22px;
+    }
+    h1 .lift { color: var(--indigo); }
+    .hero p { max-width: 34em; font-size: 1.06rem; }
+    .hero .nudge { margin-top: 14px; font-size: 0.95rem; color: var(--muted); }
+    .nudge b { color: var(--ink); font-weight: 600; }
+
+    /* Signature: the waveform band */
+    .wave {
+      display: flex; align-items: center; gap: 5px;
+      height: 96px; margin: 64px 0;
+      mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    }
+    .wave i {
+      flex: 1; min-width: 3px; border-radius: 3px;
+      background: var(--indigo);
+      height: calc(14px + var(--h) * 68px);
+      opacity: calc(0.25 + var(--h) * 0.75);
+      animation: breathe 2.6s ease-in-out infinite;
+      animation-delay: var(--d);
+      transform-origin: center;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scaleY(0.55); }
+      50% { transform: scaleY(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wave i { animation: none; }
+    }
+
+    /* The integration */
+    .how { padding-bottom: 8px; }
+    .how h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: 1.35rem; letter-spacing: -0.01em;
+      color: var(--ink); margin-bottom: 6px;
+    }
+    .how > .shell > p { max-width: 38em; }
+    pre {
+      margin: 22px 0 0;
+      background: var(--wash);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--indigo);
+      border-radius: 8px;
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    pre .attr { color: var(--indigo-deep); }
+
+    .facts {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
+      margin: 44px 0 0;
+      padding-top: 32px;
+      border-top: 1px solid var(--line);
+    }
+    .fact h3 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .fact p { font-size: 0.9rem; color: var(--muted); }
+
+    footer { margin-top: 72px; border-top: 1px solid var(--line); }
+    footer .shell { padding-top: 22px; padding-bottom: 30px; }
+    footer p { font-size: 0.82rem; color: var(--muted); }
+    footer code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; background: var(--wash); padding: 1px 5px; border-radius: 4px; }
+
+    /* Setup note shown only when no agent key resolves */
+    .setup-note {
+      position: fixed; bottom: 24px; right: 24px; max-width: 340px;
+      background: #fff; border: 1px solid var(--line); border-left: 3px solid var(--indigo);
+      border-radius: 10px; padding: 14px 16px;
+      font-size: 0.88rem; line-height: 1.55; color: var(--body);
+      box-shadow: 0 6px 24px rgba(90, 99, 214, 0.14);
+    }
+    .setup-note code { background: var(--wash); padding: 1px 4px; border-radius: 4px; font-size: 0.8em; word-break: break-all; }
+
+    @media (max-width: 640px) {
+      .hero { padding-top: 56px; }
+      .wave { margin: 44px 0; height: 72px; }
+      .facts { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="shell bar">
+    <span class="glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span class="wordmark">Arya</span>
+    <span class="bar-tag">Widget demo</span>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="shell">
+      <p class="eyebrow">Embed demo</p>
+      <h1>Talk to<br>this <span class="lift">page.</span></h1>
+      <p>Everything here is one static HTML file with a single script tag
+         pasted before the closing body tag. The round button in the corner
+         is a live voice agent, served by the Arya engine you run.</p>
+      <p class="nudge">Click the bubble in the <b>bottom right corner</b> and say hello.</p>
+    </div>
+  </section>
+
+  <div class="shell">
+    <div class="wave" id="wave" aria-hidden="true"></div>
+  </div>
+
+  <section class="how">
+    <div class="shell">
+      <h2>The entire integration</h2>
+      <p>This is the full extent of what a website pastes to get the agent.
+         Build and publish the agent in the Arya builder, copy the
+         snippet from Share &amp; embed, and put it on any page.</p>
+      <pre>&lt;script <span class="attr">src</span>="https://YOUR-ENGINE/arya-widget.js"
+        <span class="attr">data-arya-agent-key</span>="pk_YOUR_KEY" async&gt;&lt;/script&gt;</pre>
+      <div class="facts">
+        <div class="fact">
+          <h3>One paste</h3>
+          <p>The loader is 3 KB and draws a bubble. The agent itself opens lazily, in its own frame.</p>
+        </div>
+        <div class="fact">
+          <h3>Your engine</h3>
+          <p>Audio, provider keys, and transcripts stay on the server you deployed. Nothing here is hosted for you.</p>
+        </div>
+        <div class="fact">
+          <h3>Origin locked</h3>
+          <p>The public key only answers on websites you allow, with per-agent caps on calls and duration.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell">
+    <p>Arya, the open-source voice agent starter kit. This page exists to host the widget.
+       Testing tips: <code>?key=pk_...</code> uses another agent,
+       <code>?engine=https://host</code> points at a deployed engine,
+       <code>?accent=%235a63d6</code> recolors the bubble.</p>
+  </div>
+</footer>
+
+<script>
+  // Waveform band: bars with randomized height and phase. Static heights
+  // remain when the animation is disabled by prefers-reduced-motion.
+  (function () {
+    var wave = document.getElementById("wave");
+    var n = Math.max(28, Math.min(56, Math.floor(window.innerWidth / 22)));
+    for (var i = 0; i < n; i++) {
+      var bar = document.createElement("i");
+      var mid = 1 - Math.abs(i - n / 2) / (n / 2);           // taller near center
+      var h = Math.max(0.08, Math.min(1, mid * (0.35 + Math.random() * 0.85)));
+      bar.style.setProperty("--h", h.toFixed(3));
+      bar.style.setProperty("--d", (Math.random() * -2.6).toFixed(2) + "s");
+      wave.appendChild(bar);
+    }
+  })();
+</script>
+
+<!-- The Arya embed. A real site pastes the ONE line shown above; this demo
+     loads the same loader dynamically so the key, engine, and bubble color
+     can be swapped via query params without editing the file. -->
+<script>
+  (function () {
+    var params = new URLSearchParams(location.search);
+    // Default key: the locally published demo agent. Replace it (or pass
+    // ?key=) to point the bubble at your own published agent.
+    var key = params.get("key") || "pk_0V9k3GPvvdUp-YVNzYFut0_Wr0g8ZWaw";
+    var engine = (params.get("engine") || "http://localhost:8000").replace(/\/+$/, "");
+    // The loader's default accent already matches the Arya indigo; only
+    // pass one through when the page is opened with ?accent=.
+    var accent = params.get("accent");
+
+    if (!key) {
+      var note = document.createElement("div");
+      note.className = "setup-note";
+      note.innerHTML =
+        "<strong>No agent key yet.</strong><br>" +
+        "In the builder, open <em>Preview, then Share &amp; embed</em>, publish " +
+        "the agent, copy its <code>pk_</code> key, then reload this page as " +
+        "<code>" + location.origin + location.pathname + "?key=pk_YOUR_KEY</code>";
+      document.body.appendChild(note);
+      return;
+    }
+    var s = document.createElement("script");
+    s.src = engine + "/arya-widget.js";
+    s.async = true;
+    s.setAttribute("data-arya-agent-key", key);
+    if (accent) s.setAttribute("data-arya-accent", accent);
+    document.body.appendChild(s);
+  })();
+</script>
+</body>
+</html>

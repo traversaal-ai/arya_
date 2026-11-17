@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arya"
+version = "0.1.0"
+description = "Open-source voice-agent starter kit built on LiveKit"
+requires-python = ">=3.10, <3.13"
+
+dependencies = [
+    "asyncpg>=0.31.0",
+    "docling>=2.118.0",
+    "fastapi>=0.141.1",
+    "httpx>=0.27",
+    # [mcp] pulls the optional `mcp` client the connectors feature needs
+    # (connectors.py); the extra keeps LiveKit in charge of the version range.
+    # The whole LiveKit set moves together: livekit-plugins-google pins its
+    # matching agents release (1.8.3 needs agents>=1.8.3), and a plugin older
+    # than the agents core is not a supported combination. Bumping one plugin
+    # therefore bumps the floor for all of them.
+    "livekit-agents[mcp]>=1.8.3",
+    "livekit-api>=1.2.0",
+    "livekit-plugins-google>=1.8.3",
+    "livekit-plugins-groq>=1.8.3",
+    "livekit-plugins-openai>=1.8.3",
+    "livekit-plugins-silero>=1.8.3",
+    "mem0ai>=0.1.100",
+    "minio>=7.2.20",
+    "python-dotenv",
+    "python-multipart>=0.0.32",
+    "qdrant-client>=1.18.0",
+    # torch/torchvision are only needed transitively (docling OCR), but they
+    # must be direct dependencies for the [tool.uv.sources] CPU pin below to
+    # apply — uv sources never affect purely-transitive packages.
+    "torch>=2",
+    "torchvision",
+    "uvicorn>=0.52.1",
+    "weasyprint>=69.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.uv]
+# yarl 1.24.1 was published with only a cp310 wheel and no sdist, so it can't
+# install on Python 3.11+. Remove this once upstream uploads the remaining wheels.
+constraint-dependencies = ["yarl<1.24"]
+
+# torch is only pulled in by docling (document OCR at ingestion time) — the
+# voice pipeline never touches it, and compose grants no container a GPU. The
+# CPU wheels shave ~5 GB off the image and cut dependency-change rebuilds from
+# ~20 min to ~3-4. To OCR on GPU instead, see agents.md → How to extend.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "A", "C4", "UP", "SIM", "RUF"]
+ignore = ["E501"]

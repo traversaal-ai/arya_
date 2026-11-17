@@ -1,0 +1,31 @@
+# Keep host-side state, secrets, and junk OUT of the image build context.
+#
+# Three real incidents this file prevents:
+# - backend/.venv (a host-run uv env) once rode COPY backend ./ into the
+#   image, clobbered the baked locked venv, and made `uv run` re-download
+#   every dependency at CONTAINER START (crash-looping on network timeout).
+# - backend/data holds keys.json (live provider keys) — without this file
+#   it gets baked into distributable image layers.
+# - .git + node_modules pushed the build context to 1.9 GB (8-min builds).
+
+.git
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# host-side python state — the image builds its own venv from uv.lock
+backend/.venv
+**/__pycache__
+*.pyc
+
+# runtime state + secrets — bind-mounted at run, never baked
+backend/data
+backend/.env.local
+backend/metrics
+.env
+livekit.yaml
+seaweedfs-s3.json
+
+# frontend: node_modules is restored in-image; dist is built in-image
+frontend/node_modules
+frontend/dist

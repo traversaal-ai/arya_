@@ -1,0 +1,175 @@
+/* Widget-frame chrome: the iframe is the whole viewport. Two layouts:
+   - standalone tab: .embed-hero → shared CallLayout (styles.css rules)
+   - framed (loader iframe): the .wgt morph layout below */
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); }
+#arya-widget { height: 100%; }
+
+/* pre-call hero (standalone tab): orb alone, centered */
+.embed-hero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+.embed-hero .bigorb { --orb-size: clamp(160px, 34vmin, 300px); }
+.embed-hero .herostate { min-height: 16px; }
+
+/* soften the standalone hero -> split switch */
+@media (prefers-reduced-motion: no-preference) {
+  .callframe .call-cols { animation: wgtfade 0.35s ease; }
+}
+@keyframes wgtfade { from { opacity: 0; } }
+
+/* ══ framed morph layout (.wgt) ═══════════════════════════════════════
+   First open = hero: big centered orb + name + call button, nothing else.
+   Once ANY call happens (live or ended) = docked: the orb shrinks into a
+   compact header row (ElevenLabs-style) and the chat owns the space.
+   The orb element persists across states; width/height derive from
+   --orb-size so transitioning them animates the size flip. */
+.wgt { position: relative; }
+.wgt-chrome { position: absolute; top: 10px; right: 10px; z-index: 3; }
+.wgt-col {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wgt-spacer {
+  flex: 1 1 0;
+  min-height: 0;
+  transition: flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wgt.docked .wgt-spacer { flex-grow: 0.0001; } /* 0 exactly kills the tween */
+
+/* hero: centered column */
+.wgt .wgt-hero { padding: 18px 16px 10px; }
+.wgt .wgt-hero .bigorb {
+  --orb-size: clamp(160px, 34vmin, 300px);
+  transition:
+    width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease-out; /* keep the --level swell responsive */
+}
+.wgt-id { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wgt-cta { display: flex; justify-content: center; }
+
+/* docked: header row : small orb left, name+state beside it, CTA (Call
+   again, when ended) pushed right; the ⌄ chrome sits past the padding */
+.wgt.docked .wgt-hero {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 10px 56px 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.wgt.docked .wgt-hero .bigorb { --orb-size: 44px; }
+.wgt.docked .wgt-id { align-items: flex-start; gap: 1px; min-width: 0; }
+.wgt.docked .heroname {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wgt.docked .herostate { font-size: 11px; }
+.wgt.docked .wgt-cta { margin-left: auto; }
+
+/* chat body: hidden/empty in hero, grows in when docked */
+.wgt-body {
+  flex: 0.0001 1 0px;
+  min-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease 0.1s;
+}
+.wgt.docked .wgt-body { flex-grow: 1; opacity: 1; }
+.wgt-body .callroom { flex: 1; min-height: 0; }
+
+/* Document citation chips never show in the floating panel. Defense in
+   depth: the worker already withholds doc citations from visitor sessions
+   (agent.py, is_public_session) and Transcript passes docChips={false} to
+   SourceCards here in code, so no doc chip should ever reach the DOM; this
+   is the third gate, a plain CSS backstop, for whatever slips through.
+   `:not(.link-row)` matters because LinkChips.jsx reuses the same `.sum`
+   utility class for its own row, which must stay visible: the single
+   link an answer gives is the visitor's main way to reach a page.
+   Everything else here is compact sizing for the ~320px column. */
+.wgt .pm-row .sum:not(.link-row) { display: none; }
+.wgt .link-chip { font-size: 12px; padding: 5px 10px; }
+/* Narrower panel, so the title gives up characters first; the domain and
+   the two icons keep their space, since they are what make the chip
+   recognisable as a link at a glance. */
+.wgt .link-chip-title { max-width: 22ch; }
+.wgt .srccards { gap: 4px; }
+.wgt .srccard { padding: 6px 10px; border-radius: 10px; }
+.wgt .srccard-title { font-size: 12.5px; }
+.wgt .srccard-snip { font-size: 11.5px; -webkit-line-clamp: 1; }
+.wgt .optcard { padding: 6px 10px; }
+.wgt .optcard-meta { font-size: 11px; }
+.wgt .optcard-row { font-size: 12.5px; gap: 8px; }
+.wgt .optcard-leg { font-size: 11.5px; gap: 6px; }
+.wgt .optcard-price { font-size: 13px; }
+.wgt .srcs-sum { font-size: 10.5px; }
+/* Rich interactions at the ~320px width: smaller chips, a two-column
+   gallery, a slimmer itinerary card. */
+.wgt .sugg-chip { min-height: 28px; padding: 5px 11px; font-size: 12px; }
+.wgt .optcard-question { font-size: 12.5px; }
+.wgt .optcard-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.wgt .optcard-pic-body { padding: 6px 8px 8px; font-size: 12px; }
+.wgt .optcard-thumb.lg { width: 52px; height: 52px; }
+.wgt .itin-card { max-width: 100%; padding: 7px 10px 7px 8px; }
+.wgt .itin-ico { width: 28px; height: 28px; }
+.wgt .itin-body span { display: none; }
+
+/* mini controls live in the flow but only show in pill mode */
+.wgt-mini-controls { display: none; }
+
+/* ── mini pill: the loader resizes the iframe to ~232×84; the app flips
+   to a horizontal row : same persistent orb, still audio-reactive ── */
+.wgt.mini .wgt-chrome,
+.wgt.mini .wgt-id,
+.wgt.mini .wgt-cta,
+.wgt.mini .wgt-spacer,
+.wgt.mini .messages,
+.wgt.mini .input-area { display: none; }
+.wgt.mini .wgt-col {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 10px 0 14px;
+  gap: 10px;
+}
+.wgt.mini .wgt-hero { padding: 0; border-bottom: 0; }
+.wgt.mini .wgt-hero .bigorb { --orb-size: 56px; }
+.wgt.mini .wgt-body {
+  border-top: 0;
+  overflow: visible;
+  opacity: 1;
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+.wgt.mini .wgt-body .callroom {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+.wgt.mini .wgt-mini-controls { display: flex; gap: 8px; align-items: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wgt-spacer,
+  .wgt .wgt-hero .bigorb,
+  .wgt-cta,
+  .wgt-body { transition: none; }
+}
